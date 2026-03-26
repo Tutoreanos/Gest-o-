@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ConsultPro — Gestão de Consultoria com OKRs</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0a0d12;overflow:hidden}
+    #root{height:100vh}
+    ::-webkit-scrollbar{width:5px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:#252b38;border-radius:3px}
+    ::-webkit-scrollbar-thumb:hover{background:#3b82f6}
+    ::selection{background:rgba(59,130,246,0.3)}
+    option{background:#141820;color:#e8eaf0}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slideIn{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+    .fade-in{animation:fadeIn 0.3s ease forwards}
+    .slide-in{animation:slideIn 0.25s ease forwards}
+    @keyframes floatOrb{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(30px,-20px) scale(1.1)}50%{transform:translate(-20px,30px) scale(0.95)}75%{transform:translate(20px,20px) scale(1.05)}}
+    @keyframes loginReveal{from{opacity:0;transform:translateY(20px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+    @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    @keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-4px)}20%,40%,60%,80%{transform:translateX(4px)}}
+    .login-reveal{animation:loginReveal 0.6s cubic-bezier(.22,1,.36,1) forwards}
+    .shake{animation:shake 0.5s ease}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.9/babel.min.js"></script>
+  <script type="text/babel">
+const{useState,useMemo,useCallback,useEffect,useRef}=React;
+
+// ═══════════════════════════════════════════════════════════
+// ICONS
+// ═══════════════════════════════════════════════════════════
+const I=(d)=>(p)=>React.createElement("svg",{...p,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round",dangerouslySetInnerHTML:{__html:d}});
+const Icons={
+  Home:I('<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'),
+  Folder:I('<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>'),
+  Target:I('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'),
+  BarChart:I('<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>'),
+  Plus:I('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'),
+  Check:I('<polyline points="20 6 9 17 4 12"/>'),
+  CheckCircle:I('<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'),
+  AlertTriangle:I('<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
+  X:I('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'),
+  ChevronRight:I('<polyline points="9 18 15 12 9 6"/>'),
+  ChevronDown:I('<polyline points="6 9 12 15 18 9"/>'),
+  Edit:I('<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'),
+  Trash:I('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'),
+  Users:I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+  TrendUp:I('<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>'),
+  Calendar:I('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
+  Flag:I('<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>'),
+  Link:I('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'),
+  Layers:I('<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>'),
+  Zap:I('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>'),
+  Award:I('<circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>'),
+  Eye:I('<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'),
+};
+
+// ═══════════════════════════════════════════════════════════
+// THEME & UTILS
+// ═══════════════════════════════════════════════════════════
+const uid=()=>Math.random().toString(36).slice(2,10);
+const fmt=(d)=>new Date(d+"T12:00:00").toLocaleDateString("pt-BR");
+const pct=(v)=>Math.min(100,Math.max(0,Math.round(v)));
+const FONT="'Instrument Sans','DM Sans',system-ui,sans-serif";
+const FONT_D="'DM Sans','Instrument Sans',system-ui,sans-serif";
+
+const T={
+  bg:"#0a0d12",surface:"#111620",surfaceHover:"#181e2c",card:"#141a24",cardHover:"#1a2030",
+  border:"#1e2536",borderLight:"#181f2e",borderAccent:"rgba(59,130,246,0.25)",
+  text:"#e8eaf0",textSecondary:"#b0b8cc",textMuted:"#7a84a0",textDim:"#4d5672",
+  accent:"#3b82f6",accentSoft:"rgba(59,130,246,0.1)",accentMed:"rgba(59,130,246,0.2)",
+  success:"#22c55e",successSoft:"rgba(34,197,94,0.1)",
+  warning:"#f59e0b",warningSoft:"rgba(245,158,11,0.1)",
+  danger:"#ef4444",dangerSoft:"rgba(239,68,68,0.1)",
+  purple:"#8b5cf6",purpleSoft:"rgba(139,92,246,0.1)",
+  gradient:"linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%)",
+  gradientGreen:"linear-gradient(135deg,#22c55e 0%,#06b6d4 100%)",
+};
+
+const STATUS={"Não iniciado":{c:"#6b7280",bg:"#1e2130"},"Em andamento":{c:"#3b82f6",bg:"rgba(59,130,246,0.12)"},"Concluído":{c:"#22c55e",bg:"rgba(34,197,94,0.12)"},"Atrasado":{c:"#ef4444",bg:"rgba(239,68,68,0.12)"}};
+const PRIORITY={"Alta":{c:"#ef4444",bg:"rgba(239,68,68,0.12)"},"Média":{c:"#f59e0b",bg:"rgba(245,158,11,0.12)"},"Baixa":{c:"#6b7280",bg:"#1e2130"}};
+
+// ═══════════════════════════════════════════════════════════
+// REUSABLE COMPONENTS
+// ═══════════════════════════════════════════════════════════
+function Badge({children,color,bg}){return <span style={{display:"inline-flex",alignItems:"center",fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:5,color,background:bg,letterSpacing:0.3,whiteSpace:"nowrap"}}>{children}</span>}
+function StatusBadge({status}){const s=STATUS[status]||STATUS["Não iniciado"];return <Badge color={s.c} bg={s.bg}>{status}</Badge>}
+function PriorityBadge({p}){const x=PRIORITY[p]||PRIORITY["Média"];return <Badge color={x.c} bg={x.bg}>{p}</Badge>}
+
+function ProgressBar({value,max=100,height=5,color=T.accent,bg="rgba(255,255,255,0.04)"}){
+  const p=pct((value/max)*100);
+  return <div style={{width:"100%",height,borderRadius:height,background:bg,overflow:"hidden"}}>
+    <div style={{width:p+"%",height:"100%",borderRadius:height,background:p>=80?T.success:p>=50?color:p>=25?T.warning:T.danger,transition:"width 0.7s cubic-bezier(.4,0,.2,1)"}}/>
+  </div>;
+}
+
+function CircleGauge({value,size=80,stroke=5,label,sub,color}){
+  const r=(size-stroke*2)/2,C=2*Math.PI*r,off=C-(value/100)*C;
+  const clr=color||(value>=80?T.success:value>=50?T.accent:value>=25?T.warning:T.danger);
+  return <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={stroke}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={clr} strokeWidth={stroke} strokeDasharray={C} strokeDashoffset={off} strokeLinecap="round" transform={`rotate(-90 ${size/2} ${size/2})`} style={{transition:"stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1)"}}/>
+      <text x={size/2} y={size/2-2} textAnchor="middle" fill={T.text} fontSize={size*0.2} fontWeight="700" fontFamily={FONT}>{value}%</text>
+      {sub&&<text x={size/2} y={size/2+size*0.12} textAnchor="middle" fill={T.textMuted} fontSize={size*0.09} fontFamily={FONT}>{sub}</text>}
+    </svg>
+    {label&&<div style={{fontSize:11,fontWeight:600,color:T.textSecondary,textAlign:"center",maxWidth:size+20,lineHeight:1.3}}>{label}</div>}
+  </div>;
+}
+
+function Btn({children,onClick,variant="primary",size="md",icon:Ic,disabled,style:extra={}}){
+  const base={display:"inline-flex",alignItems:"center",gap:6,border:"none",borderRadius:8,cursor:disabled?"not-allowed":"pointer",fontWeight:600,fontFamily:FONT,transition:"all 0.15s ease",whiteSpace:"nowrap",opacity:disabled?0.5:1};
+  const sizes={xs:{padding:"4px 8px",fontSize:11},sm:{padding:"5px 12px",fontSize:12},md:{padding:"8px 16px",fontSize:13}};
+  const vars={
+    primary:{background:T.accent,color:"#fff"},
+    ghost:{background:"transparent",color:T.textMuted,border:"1px solid "+T.border},
+    danger:{background:T.dangerSoft,color:T.danger},
+    success:{background:T.successSoft,color:T.success},
+    purple:{background:T.purpleSoft,color:T.purple},
+  };
+  return <button onClick={disabled?undefined:onClick} style={{...base,...sizes[size],...vars[variant],...extra}}
+    onMouseEnter={e=>{if(!disabled)e.currentTarget.style.opacity="0.85"}}
+    onMouseLeave={e=>{e.currentTarget.style.opacity=disabled?"0.5":"1"}}>
+    {Ic&&<Ic style={{width:size==="xs"?12:size==="sm"?13:15,height:size==="xs"?12:size==="sm"?13:15}}/>}{children}
+  </button>;
+}
+
+function Input({label,value,onChange,type="text",placeholder,options,rows,style:extra={}}){
+  const s={padding:"8px 12px",borderRadius:8,border:"1px solid "+T.border,background:T.surface,color:T.text,fontSize:13,fontFamily:FONT,outline:"none",width:"100%",...extra};
+  return <div style={{display:"flex",flexDirection:"column",gap:4}}>
+    {label&&<label style={{fontSize:10,fontWeight:600,color:T.textMuted,letterSpacing:0.5,textTransform:"uppercase"}}>{label}</label>}
+    {options?<select value={value} onChange={e=>onChange(e.target.value)} style={s}>{options.map(o=><option key={o} value={o}>{o}</option>)}</select>
+    :rows?<textarea value={value} onChange={e=>onChange(e.target.value)} rows={rows} placeholder={placeholder} style={{...s,resize:"vertical"}}/>
+    :<input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={s}/>}
+  </div>;
+}
+
+function Modal({title,children,onClose,width=600}){
+  return <div className="fade-in" style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}} onClick={onClose}>
+    <div className="slide-in" onClick={e=>e.stopPropagation()} style={{background:T.card,borderRadius:16,border:"1px solid "+T.border,width:"100%",maxWidth:width,maxHeight:"88vh",overflow:"auto",boxShadow:"0 32px 64px rgba(0,0,0,0.5)"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 20px",borderBottom:"1px solid "+T.border,position:"sticky",top:0,background:T.card,zIndex:1,borderRadius:"16px 16px 0 0"}}>
+        <h3 style={{margin:0,fontSize:15,fontWeight:700,color:T.text,fontFamily:FONT_D}}>{title}</h3>
+        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:T.textMuted,padding:4}}><Icons.X style={{width:18,height:18}}/></button>
+      </div>
+      <div style={{padding:20}}>{children}</div>
+    </div>
+  </div>;
+}
+
+function MiniBar({data,height=130}){
+  const max=Math.max(...data.map(d=>d.value),1);
+  return <div style={{display:"flex",alignItems:"flex-end",gap:5,height,padding:"8px 0"}}>
+    {data.map((d,i)=><div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+      <span style={{fontSize:9,color:T.textMuted,fontWeight:600}}>{d.value}</span>
+      <div style={{width:"100%",maxWidth:32,height:(d.value/max)*100+"%",minHeight:3,borderRadius:4,background:d.color||T.accent,transition:"height 0.5s ease"}}/>
+      <span style={{fontSize:8,color:T.textDim,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:50,textAlign:"center"}}>{d.label}</span>
+    </div>)}
+  </div>;
+}
+
+function Checkbox({checked,onChange,label}){
+  return <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13,color:checked?T.success:T.text,transition:"all 0.15s"}}
+    onClick={e=>{e.stopPropagation();onChange(!checked)}}>
+    <div style={{width:18,height:18,borderRadius:5,border:checked?"none":"2px solid "+T.border,background:checked?T.success:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s ease",flexShrink:0}}>
+      {checked&&<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+    </div>
+    <span style={{textDecoration:checked?"line-through":"none",opacity:checked?0.6:1,transition:"all 0.2s"}}>{label}</span>
+  </label>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// INITIAL DATA — OKR-CENTRIC STRUCTURE
+// ═══════════════════════════════════════════════════════════
+const INIT_PROJECTS=[
+{
+  id:"p1",nome:"Reestruturação Organizacional",cliente:"TechBrasil Ltda",consultor:"Ana Souza",
+  inicio:"2026-01-15",prazo:"2026-06-30",status:"Em andamento",
+  descricao:"Projeto de reestruturação de processos e organograma para aumento de eficiência operacional.",
+  okrs:[
+    {
+      id:"o1",objective:"Reduzir custos operacionais em 20%",owner:"Ana Souza",quarter:"Q1 2026",
+      keyResults:[
+        {id:"kr1",title:"Mapear e eliminar 100% dos processos redundantes",meta:100,unidade:"%",
+          acoes:[
+            {id:"a1",what:"Mapear processos atuais (AS-IS)",why:"Identificar gargalos",who:"Ana Souza",where:"Sede TechBrasil",when:"2026-02-01",how:"Entrevistas e fluxogramas",howMuch:"R$ 8.000",status:"Concluído",prioridade:"Alta"},
+            {id:"a2",what:"Identificar processos redundantes",why:"Eliminar desperdício",who:"Carlos Lima",where:"Escritório",when:"2026-02-20",how:"Análise de fluxogramas",howMuch:"R$ 3.000",status:"Concluído",prioridade:"Alta"},
+            {id:"a3",what:"Propor novo fluxo otimizado (TO-BE)",why:"Redesenhar operações",who:"Ana Souza",where:"Escritório",when:"2026-03-10",how:"Workshop com gestores",howMuch:"R$ 5.000",status:"Em andamento",prioridade:"Alta"},
+          ]
+        },
+        {id:"kr2",title:"Reduzir tempo médio de aprovações de 5 para 2 dias",meta:100,unidade:"%",
+          acoes:[
+            {id:"a4",what:"Implantar sistema BPM de aprovações",why:"Agilizar tomada de decisão",who:"Ana Souza",where:"Sede TechBrasil",when:"2026-04-30",how:"Sistema BPM + treinamento",howMuch:"R$ 15.000",status:"Não iniciado",prioridade:"Alta"},
+            {id:"a5",what:"Treinar gestores no novo fluxo",why:"Garantir adoção",who:"Carlos Lima",where:"Sede",when:"2026-05-15",how:"Workshops presenciais",howMuch:"R$ 4.000",status:"Não iniciado",prioridade:"Média"},
+          ]
+        },
+        {id:"kr3",title:"Alcançar 85pts no índice de satisfação interna",meta:100,unidade:"%",
+          acoes:[
+            {id:"a6",what:"Realizar pesquisa de clima atual",why:"Baseline de satisfação",who:"Juliana Freitas",where:"Remoto",when:"2026-02-15",how:"Survey anônimo",howMuch:"R$ 2.000",status:"Concluído",prioridade:"Média"},
+            {id:"a7",what:"Implementar plano de ação de clima",why:"Melhorar engajamento",who:"Ana Souza",where:"Sede",when:"2026-05-30",how:"Ações focadas nos gaps",howMuch:"R$ 8.000",status:"Em andamento",prioridade:"Média"},
+          ]
+        }
+      ]
+    },
+    {
+      id:"o2",objective:"Redesenhar organograma eliminando sobreposições",owner:"Carlos Lima",quarter:"Q1 2026",
+      keyResults:[
+        {id:"kr4",title:"Reduzir 30% das posições duplicadas",meta:100,unidade:"%",
+          acoes:[
+            {id:"a8",what:"Levantar todas as descrições de cargo",why:"Mapear sobreposições",who:"Carlos Lima",where:"RH TechBrasil",when:"2026-02-28",how:"Análise documental",howMuch:"R$ 3.000",status:"Concluído",prioridade:"Alta"},
+            {id:"a9",what:"Redesenhar organograma",why:"Eliminar redundâncias",who:"Carlos Lima",where:"Escritório",when:"2026-03-15",how:"Workshop com diretoria",howMuch:"R$ 5.000",status:"Em andamento",prioridade:"Alta"},
+          ]
+        },
+        {id:"kr5",title:"Aprovar novo organograma com 100% do C-level",meta:100,unidade:"%",
+          acoes:[
+            {id:"a10",what:"Apresentar proposta ao board",why:"Validação executiva",who:"Carlos Lima",where:"Sala de reuniões",when:"2026-04-10",how:"Apresentação formal",howMuch:"R$ 2.000",status:"Não iniciado",prioridade:"Alta"},
+          ]
+        }
+      ]
+    }
+  ]
+},
+{
+  id:"p2",nome:"Planejamento Estratégico 2026-2030",cliente:"GreenFarm Agronegócio",consultor:"Roberto Mendes",
+  inicio:"2026-02-01",prazo:"2026-05-31",status:"Em andamento",
+  descricao:"Elaboração do plano estratégico quinquenal com foco em expansão sustentável.",
+  okrs:[
+    {
+      id:"o3",objective:"Mapear 5 novos mercados para expansão",owner:"Roberto Mendes",quarter:"Q1 2026",
+      keyResults:[
+        {id:"kr6",title:"Completar análise SWOT de 5 mercados-alvo",meta:100,unidade:"%",
+          acoes:[
+            {id:"a11",what:"Análise SWOT completa",why:"Base para direcionamento",who:"Roberto Mendes",where:"GreenFarm sede",when:"2026-02-15",how:"Sessões com C-level",howMuch:"R$ 10.000",status:"Concluído",prioridade:"Alta"},
+            {id:"a12",what:"Pesquisa de mercado detalhada",why:"Dados de viabilidade",who:"Juliana Freitas",where:"Remoto",when:"2026-03-30",how:"Benchmarking e dados públicos",howMuch:"R$ 20.000",status:"Em andamento",prioridade:"Alta"},
+            {id:"a13",what:"Ranking de mercados por potencial",why:"Priorizar investimentos",who:"Roberto Mendes",where:"Escritório",when:"2026-04-10",how:"Matriz de decisão",howMuch:"R$ 5.000",status:"Não iniciado",prioridade:"Média"},
+          ]
+        },
+        {id:"kr7",title:"Atingir score 90pts no índice de sustentabilidade",meta:100,unidade:"%",
+          acoes:[
+            {id:"a14",what:"Auditoria de sustentabilidade atual",why:"Identificar gaps ESG",who:"Roberto Mendes",where:"Fazendas",when:"2026-03-15",how:"Checklist ESG",howMuch:"R$ 12.000",status:"Concluído",prioridade:"Alta"},
+            {id:"a15",what:"Plano de ação ESG",why:"Melhorar score",who:"Roberto Mendes",where:"Escritório",when:"2026-04-30",how:"Framework GRI",howMuch:"R$ 8.000",status:"Em andamento",prioridade:"Alta"},
+          ]
+        }
+      ]
+    },
+    {
+      id:"o4",objective:"Definir metas financeiras para 5 anos",owner:"Roberto Mendes",quarter:"Q2 2026",
+      keyResults:[
+        {id:"kr8",title:"Modelo financeiro validado pelo board",meta:100,unidade:"%",
+          acoes:[
+            {id:"a16",what:"Construir modelo financeiro",why:"Projeções de receita e custo",who:"Roberto Mendes",where:"Escritório",when:"2026-04-15",how:"Excel + cenários",howMuch:"R$ 7.000",status:"Não iniciado",prioridade:"Alta"},
+            {id:"a17",what:"Validar premissas com diretoria",why:"Alinhamento executivo",who:"Roberto Mendes",where:"GreenFarm",when:"2026-05-10",how:"Reunião de validação",howMuch:"R$ 3.000",status:"Não iniciado",prioridade:"Média"},
+          ]
+        }
+      ]
+    }
+  ]
+},
+{
+  id:"p3",nome:"Transformação Digital",cliente:"Construtora Horizonte",consultor:"Carlos Lima",
+  inicio:"2025-11-01",prazo:"2026-03-31",status:"Atrasado",
+  descricao:"Digitalização de processos de obra e implementação de ERP integrado.",
+  okrs:[
+    {
+      id:"o5",objective:"Digitalizar 100% dos processos de obra",owner:"Carlos Lima",quarter:"Q4 2025",
+      keyResults:[
+        {id:"kr9",title:"ERP selecionado, contratado e configurado",meta:100,unidade:"%",
+          acoes:[
+            {id:"a18",what:"RFP e avaliação de fornecedores",why:"Selecionar melhor ERP",who:"Carlos Lima",where:"Escritório",when:"2025-12-15",how:"Matriz de avaliação",howMuch:"R$ 12.000",status:"Concluído",prioridade:"Alta"},
+            {id:"a19",what:"Configuração inicial do ERP",why:"Preparar ambiente",who:"Juliana Freitas",where:"Datacenter",when:"2026-01-30",how:"Setup técnico",howMuch:"R$ 18.000",status:"Concluído",prioridade:"Alta"},
+          ]
+        },
+        {id:"kr10",title:"Migrar 100% dos dados legados sem perda",meta:100,unidade:"%",
+          acoes:[
+            {id:"a20",what:"Migração de dados legados",why:"Continuidade operacional",who:"Juliana Freitas",where:"Datacenter cliente",when:"2026-02-28",how:"ETL e validação manual",howMuch:"R$ 25.000",status:"Atrasado",prioridade:"Alta"},
+          ]
+        },
+        {id:"kr11",title:"95% dos colaboradores treinados e usando o sistema",meta:100,unidade:"%",
+          acoes:[
+            {id:"a21",what:"Treinamento equipes de campo",why:"Adoção do sistema",who:"Carlos Lima",where:"Canteiros de obra",when:"2026-03-20",how:"Presencial + vídeos",howMuch:"R$ 18.000",status:"Em andamento",prioridade:"Alta"},
+            {id:"a22",what:"Suporte pós-go-live",why:"Reduzir resistência",who:"Juliana Freitas",where:"Remoto",when:"2026-03-30",how:"Helpdesk dedicado",howMuch:"R$ 6.000",status:"Não iniciado",prioridade:"Média"},
+          ]
+        }
+      ]
+    }
+  ]
+}
+];
+
+// ═══════════════════════════════════════════════════════════
+// COMPUTE OKR PROGRESS FROM ACTIONS
+// ═══════════════════════════════════════════════════════════
+function calcKRProgress(kr){
+  if(!kr.acoes||kr.acoes.length===0)return 0;
+  const done=kr.acoes.filter(a=>a.status==="Concluído").length;
+  return pct((done/kr.acoes.length)*100);
+}
+function calcOKRProgress(okr){
+  if(!okr.keyResults||okr.keyResults.length===0)return 0;
+  const sum=okr.keyResults.reduce((s,kr)=>s+calcKRProgress(kr),0);
+  return pct(sum/okr.keyResults.length);
+}
+function calcProjectProgress(project){
+  if(!project.okrs||project.okrs.length===0)return 0;
+  const sum=project.okrs.reduce((s,o)=>s+calcOKRProgress(o),0);
+  return pct(sum/project.okrs.length);
+}
+function getAllActions(project){
+  return project.okrs?.flatMap(o=>o.keyResults?.flatMap(kr=>kr.acoes||[])||[])||[];
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD PAGE
+// ═══════════════════════════════════════════════════════════
+function DashboardPage({projects,openProject}){
+  const allActions=projects.flatMap(p=>getAllActions(p));
+  const total=allActions.length;
+  const done=allActions.filter(a=>a.status==="Concluído").length;
+  const late=allActions.filter(a=>a.status==="Atrasado").length;
+  const running=allActions.filter(a=>a.status==="Em andamento").length;
+  const allKRs=projects.flatMap(p=>p.okrs?.flatMap(o=>o.keyResults||[])||[]);
+  const avgKR=allKRs.length?pct(allKRs.reduce((s,kr)=>s+calcKRProgress(kr),0)/allKRs.length):0;
+  const totalOKRs=projects.reduce((s,p)=>s+(p.okrs?.length||0),0);
+
+  const cards=[
+    {label:"Projetos",value:projects.length,icon:Icons.Folder,color:T.accent},
+    {label:"OKRs Ativos",value:totalOKRs,icon:Icons.Target,color:T.purple},
+    {label:"Ações Concluídas",value:done+"/"+total,icon:Icons.CheckCircle,color:T.success},
+    {label:"Ações Atrasadas",value:late,icon:Icons.AlertTriangle,color:T.danger},
+    {label:"Performance Geral",value:avgKR+"%",icon:Icons.TrendUp,color:avgKR>=70?T.success:T.warning},
+  ];
+
+  return <div className="fade-in">
+    <div style={{marginBottom:28}}>
+      <h1 style={{fontSize:24,fontWeight:700,fontFamily:FONT_D,margin:0,letterSpacing:-0.5}}>Dashboard</h1>
+      <p style={{color:T.textMuted,fontSize:13,margin:"4px 0 0"}}>Visão geral dos projetos e OKRs</p>
+    </div>
+
+    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:22}}>
+      {cards.map((c,i)=><div key={i} style={{background:T.card,borderRadius:12,border:"1px solid "+T.border,padding:16,display:"flex",flexDirection:"column",gap:10}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <c.icon style={{width:18,height:18,color:c.color}}/>
+          <span style={{fontSize:10,fontWeight:600,color:T.textMuted}}>{c.label}</span>
+        </div>
+        <div style={{fontSize:24,fontWeight:700,fontFamily:FONT_D,color:T.text}}>{c.value}</div>
+      </div>)}
+    </div>
+
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:22}}>
+      <div style={{background:T.card,borderRadius:14,border:"1px solid "+T.border,padding:20}}>
+        <h3 style={{fontSize:13,fontWeight:600,margin:"0 0 4px",fontFamily:FONT_D}}>Progresso por Projeto</h3>
+        <p style={{fontSize:11,color:T.textMuted,margin:"0 0 6px"}}>Baseado na conclusão das ações vinculadas aos KRs</p>
+        <MiniBar data={projects.map(p=>({label:p.cliente.split(" ")[0],value:calcProjectProgress(p),color:p.status==="Atrasado"?T.danger:T.accent}))} />
+      </div>
+      <div style={{background:T.card,borderRadius:14,border:"1px solid "+T.border,padding:20}}>
+        <h3 style={{fontSize:13,fontWeight:600,margin:"0 0 12px",fontFamily:FONT_D}}>Status das Ações</h3>
+        {[{l:"Concluídas",v:done,c:T.success},{l:"Em andamento",v:running,c:T.accent},{l:"Atrasadas",v:late,c:T.danger},{l:"Não iniciadas",v:total-done-running-late,c:T.textDim}].map((s,i)=><div key={i} style={{marginBottom:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+            <span style={{fontSize:12,color:T.textMuted}}>{s.l}</span>
+            <span style={{fontSize:12,fontWeight:600,color:T.text}}>{s.v}</span>
+          </div>
+          <ProgressBar value={s.v} max={total||1} color={s.c}/>
+        </div>)}
+      </div>
+    </div>
+
+    <div style={{background:T.card,borderRadius:14,border:"1px solid "+T.border,padding:20}}>
+      <h3 style={{fontSize:13,fontWeight:600,margin:"0 0 14px",fontFamily:FONT_D}}>Projetos</h3>
+      {projects.map(p=>{
+        const prog=calcProjectProgress(p);
+        return <div key={p.id} onClick={()=>openProject(p)} style={{display:"flex",alignItems:"center",gap:14,padding:"11px 14px",borderRadius:10,border:"1px solid "+T.border,cursor:"pointer",background:T.surface,marginBottom:6,transition:"all 0.15s"}}
+          onMouseEnter={e=>{e.currentTarget.style.background=T.surfaceHover;e.currentTarget.style.borderColor=T.borderAccent}}
+          onMouseLeave={e=>{e.currentTarget.style.background=T.surface;e.currentTarget.style.borderColor=T.border}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:13,fontWeight:600,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nome}</div>
+            <div style={{fontSize:11,color:T.textMuted}}>{p.cliente} · {p.consultor} · {p.okrs?.length||0} OKRs</div>
+          </div>
+          <div style={{width:100}}>
+            <div style={{fontSize:10,color:T.textMuted,marginBottom:3,textAlign:"right"}}>{prog}%</div>
+            <ProgressBar value={prog}/>
+          </div>
+          <StatusBadge status={p.status}/>
+          <Icons.ChevronRight style={{width:15,height:15,color:T.textDim,flexShrink:0}}/>
+        </div>;
+      })}
+    </div>
+  </div>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROJECTS LIST PAGE
+// ═══════════════════════════════════════════════════════════
+function ProjectsPage({projects,openProject,onAdd,onDelete}){
+  const[filter,setFilter]=useState("Todos");
+  const filtered=filter==="Todos"?projects:projects.filter(p=>p.status===filter);
+  return <div className="fade-in">
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:22}}>
+      <div>
+        <h1 style={{fontSize:24,fontWeight:700,fontFamily:FONT_D,margin:0}}>Projetos</h1>
+        <p style={{color:T.textMuted,fontSize:13,margin:"4px 0 0"}}>{projects.length} projetos</p>
+      </div>
+      <Btn icon={Icons.Plus} onClick={onAdd}>Novo Projeto</Btn>
+    </div>
+    <div style={{display:"flex",gap:5,marginBottom:16}}>
+      {["Todos","Em andamento","Concluído","Atrasado","Não iniciado"].map(f=><button key={f} onClick={()=>setFilter(f)} style={{padding:"5px 12px",borderRadius:7,border:"1px solid "+(filter===f?T.accent:T.border),background:filter===f?T.accentSoft:"transparent",color:filter===f?T.accent:T.textMuted,cursor:"pointer",fontSize:11,fontWeight:500,fontFamily:FONT}}>{f}</button>)}
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:12}}>
+      {filtered.map(p=>{
+        const prog=calcProjectProgress(p);
+        const totalOKRs=p.okrs?.length||0;
+        const totalKRs=p.okrs?.reduce((s,o)=>s+(o.keyResults?.length||0),0)||0;
+        const totalAcoes=getAllActions(p).length;
+        return <div key={p.id} onClick={()=>openProject(p)} style={{background:T.card,borderRadius:14,border:"1px solid "+T.border,padding:18,cursor:"pointer",transition:"all 0.2s"}}
+          onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,0.2)"}}
+          onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:10}}>
+            <StatusBadge status={p.status}/>
+            <button onClick={e=>{e.stopPropagation();if(confirm("Excluir este projeto?"))onDelete(p.id)}} style={{background:"none",border:"none",cursor:"pointer",color:T.textDim,padding:4}}><Icons.Trash style={{width:13,height:13}}/></button>
+          </div>
+          <h3 style={{fontSize:14,fontWeight:700,margin:"0 0 4px",fontFamily:FONT_D,lineHeight:1.3}}>{p.nome}</h3>
+          <div style={{fontSize:11,color:T.textMuted,marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+            <span>{p.cliente}</span>·<span>{p.consultor}</span>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+            {[{v:totalOKRs,l:"OKRs",c:T.purple},{v:totalKRs,l:"Key Results",c:T.accent},{v:totalAcoes,l:"Ações",c:T.text}].map((x,i)=><div key={i} style={{textAlign:"center",padding:"6px 0",background:T.surface,borderRadius:6}}>
+              <div style={{fontSize:15,fontWeight:700,color:x.c}}>{x.v}</div>
+              <div style={{fontSize:9,color:T.textMuted}}>{x.l}</div>
+            </div>)}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <ProgressBar value={prog}/>
+            <span style={{fontSize:11,fontWeight:600,color:T.textMuted}}>{prog}%</span>
+          </div>
+        </div>;
+      })}
+    </div>
+  </div>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// OKR CARD — EXPANDABLE WITH KEY RESULTS AND ACTIONS
+// ═══════════════════════════════════════════════════════════
+function OKRCard({okr,onToggleAction,onEditOKR,onDeleteOKR,onAddKR,onEditKR,onDeleteKR,onAddAction,onEditAction,onDeleteAction}){
+  const[expanded,setExpanded]=useState(true);
+  const prog=calcOKRProgress(okr);
+
+  return <div style={{background:T.card,borderRadius:14,border:"1px solid "+T.border,marginBottom:14,overflow:"hidden"}}>
+    {/* OKR Header */}
+    <div style={{padding:"14px 18px",display:"flex",alignItems:"center",gap:12,cursor:"pointer",borderBottom:expanded?"1px solid "+T.border:"none"}}
+      onClick={()=>setExpanded(!expanded)}>
+      <div style={{width:40,height:40,borderRadius:10,background:T.purpleSoft,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        <Icons.Target style={{width:18,height:18,color:T.purple}}/>
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:10,fontWeight:600,color:T.purple,textTransform:"uppercase",letterSpacing:0.5,marginBottom:2}}>Objetivo · {okr.quarter}</div>
+        <div style={{fontSize:14,fontWeight:700,color:T.text,fontFamily:FONT_D}}>{okr.objective}</div>
+        <div style={{fontSize:11,color:T.textMuted,marginTop:2}}>Responsável: {okr.owner} · {okr.keyResults?.length||0} Key Results</div>
+      </div>
+      <CircleGauge value={prog} size={54} stroke={4} sub="OKR"/>
+      <div style={{display:"flex",gap:4}}>
+        <button onClick={e=>{e.stopPropagation();onEditOKR(okr)}} style={{background:"none",border:"none",cursor:"pointer",color:T.textMuted,padding:4}}><Icons.Edit style={{width:13,height:13}}/></button>
+        <button onClick={e=>{e.stopPropagation();if(confirm("Excluir OKR?"))onDeleteOKR(okr.id)}} style={{background:"none",border:"none",cursor:"pointer",color:T.danger,padding:4}}><Icons.Trash style={{width:13,height:13}}/></button>
+      </div>
+      <Icons.ChevronDown style={{width:16,height:16,color:T.textDim,transform:expanded?"rotate(0)":"rotate(-90deg)",transition:"transform 0.2s"}}/>
+    </div>
+
+    {/* Key Results */}
+    {expanded&&<div style={{padding:"0 18px 14px"}}>
+      <div style={{display:"flex",justifyContent:"flex-end",padding:"10px 0 6px"}}>
+        <Btn icon={Icons.Plus} size="xs" variant="purple" onClick={()=>onAddKR(okr.id)}>Key Result</Btn>
+      </div>
+      {(okr.keyResults||[]).map(kr=>{
+        const krProg=calcKRProgress(kr);
+        const doneCount=kr.acoes?.filter(a=>a.status==="Concluído").length||0;
+        const totalCount=kr.acoes?.length||0;
+        return <KRCard key={kr.id} kr={kr} krProg={krProg} doneCount={doneCount} totalCount={totalCount}
+          okrId={okr.id} onToggleAction={onToggleAction} onEditKR={onEditKR} onDeleteKR={onDeleteKR}
+          onAddAction={onAddAction} onEditAction={onEditAction} onDeleteAction={onDeleteAction}/>;
+      })}
+      {(!okr.keyResults||okr.keyResults.length===0)&&<div style={{padding:20,textAlign:"center",color:T.textMuted,fontSize:12}}>Nenhum Key Result cadastrado</div>}
+    </div>}
+  </div>;
+}
+
+function KRCard({kr,krProg,doneCount,totalCount,okrId,onToggleAction,onEditKR,onDeleteKR,onAddAction,onEditAction,onDeleteAction}){
+  const[open,setOpen]=useState(false);
+  return <div style={{background:T.surface,borderRadius:10,border:"1px solid "+T.border,marginBottom:8,overflow:"hidden"}}>
+    <div style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>setOpen(!open)}>
+      <div style={{width:28,height:28,borderRadius:7,background:T.accentSoft,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        <Icons.Flag style={{width:13,height:13,color:T.accent}}/>
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:12,fontWeight:600,color:T.text}}>{kr.title}</div>
+        <div style={{fontSize:10,color:T.textMuted,marginTop:1}}>{doneCount}/{totalCount} ações concluídas</div>
+      </div>
+      <div style={{width:80,display:"flex",alignItems:"center",gap:6}}>
+        <ProgressBar value={krProg} height={4}/>
+        <span style={{fontSize:10,fontWeight:700,color:krProg>=80?T.success:krProg>=50?T.accent:T.warning,whiteSpace:"nowrap"}}>{krProg}%</span>
+      </div>
+      <div style={{display:"flex",gap:2}}>
+        <button onClick={e=>{e.stopPropagation();onEditKR(okrId,kr)}} style={{background:"none",border:"none",cursor:"pointer",color:T.textMuted,padding:3}}><Icons.Edit style={{width:11,height:11}}/></button>
+        <button onClick={e=>{e.stopPropagation();if(confirm("Excluir KR?"))onDeleteKR(okrId,kr.id)}} style={{background:"none",border:"none",cursor:"pointer",color:T.danger,padding:3}}><Icons.Trash style={{width:11,height:11}}/></button>
+      </div>
+      <Icons.ChevronDown style={{width:14,height:14,color:T.textDim,transform:open?"rotate(0)":"rotate(-90deg)",transition:"transform 0.2s"}}/>
+    </div>
+    {open&&<div style={{padding:"0 14px 12px"}}>
+      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
+        <Btn icon={Icons.Plus} size="xs" variant="ghost" onClick={()=>onAddAction(okrId,kr.id)}>Ação 5W2H</Btn>
+      </div>
+      {(kr.acoes||[]).map(a=><ActionRow key={a.id} action={a} okrId={okrId} krId={kr.id} onToggle={onToggleAction} onEdit={onEditAction} onDelete={onDeleteAction}/>)}
+      {(!kr.acoes||kr.acoes.length===0)&&<div style={{padding:12,textAlign:"center",color:T.textMuted,fontSize:11}}>Nenhuma ação vinculada</div>}
+    </div>}
+  </div>;
+}
+
+function ActionRow({action:a,okrId,krId,onToggle,onEdit,onDelete}){
+  const isDone=a.status==="Concluído";
+  return <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:7,background:isDone?"rgba(34,197,94,0.04)":T.bg,border:"1px solid "+(isDone?"rgba(34,197,94,0.15)":T.borderLight),marginBottom:4,transition:"all 0.15s"}}
+    onMouseEnter={e=>{e.currentTarget.style.background=isDone?"rgba(34,197,94,0.08)":T.surfaceHover}}
+    onMouseLeave={e=>{e.currentTarget.style.background=isDone?"rgba(34,197,94,0.04)":T.bg}}>
+    <div onClick={()=>onToggle(okrId,krId,a.id)} style={{cursor:"pointer",flexShrink:0}}>
+      <div style={{width:18,height:18,borderRadius:5,border:isDone?"none":"2px solid "+T.border,background:isDone?T.success:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
+        {isDone&&<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+      </div>
+    </div>
+    <div style={{flex:1,minWidth:0}}>
+      <div style={{fontSize:12,fontWeight:isDone?500:600,color:isDone?T.textMuted:T.text,textDecoration:isDone?"line-through":"none",opacity:isDone?0.7:1}}>{a.what}</div>
+      <div style={{fontSize:10,color:T.textDim,marginTop:1}}>{a.who} · {fmt(a.when)} · {a.howMuch}</div>
+    </div>
+    <PriorityBadge p={a.prioridade}/>
+    {!isDone&&<select value={a.status} onChange={e=>onToggle(okrId,krId,a.id,e.target.value)} onClick={e=>e.stopPropagation()} style={{padding:"2px 6px",borderRadius:5,border:"1px solid "+T.border,background:T.surface,color:T.text,fontSize:10,fontFamily:FONT,cursor:"pointer"}}>
+      {Object.keys(STATUS).map(s=><option key={s} value={s}>{s}</option>)}
+    </select>}
+    <button onClick={()=>onEdit(okrId,krId,a)} style={{background:"none",border:"none",cursor:"pointer",color:T.textMuted,padding:3}}><Icons.Edit style={{width:11,height:11}}/></button>
+    <button onClick={()=>{if(confirm("Excluir?"))onDelete(okrId,krId,a.id)}} style={{background:"none",border:"none",cursor:"pointer",color:T.danger,padding:3}}><Icons.Trash style={{width:11,height:11}}/></button>
+  </div>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROJECT DASHBOARD TAB
+// ═══════════════════════════════════════════════════════════
+function ProjectDashboardTab({project:p}){
+  const all=getAllActions(p);
+  const done=all.filter(a=>a.status==="Concluído").length;
+  const late=all.filter(a=>a.status==="Atrasado").length;
+  const run=all.filter(a=>a.status==="Em andamento").length;
+  const tot=all.length||1;
+  const prog=calcProjectProgress(p);
+
+  return <div className="fade-in">
+    <h3 style={{fontSize:15,fontWeight:600,margin:"0 0 16px",fontFamily:FONT_D}}>Performance do Projeto</h3>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10,marginBottom:20}}>
+      {[
+        {label:"Progresso OKRs",value:prog+"%",color:T.accent},
+        {label:"Ações Concluídas",value:done+"/"+all.length,color:T.success},
+        {label:"Ações Atrasadas",value:late,color:late>0?T.danger:T.success},
+        {label:"Em Andamento",value:run,color:T.accent},
+      ].map((c,i)=><div key={i} style={{background:T.card,borderRadius:10,border:"1px solid "+T.border,padding:14,textAlign:"center"}}>
+        <div style={{fontSize:22,fontWeight:700,fontFamily:FONT_D,color:c.color}}>{c.value}</div>
+        <div style={{fontSize:10,color:T.textMuted,marginTop:3}}>{c.label}</div>
+      </div>)}
+    </div>
+
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
+      <div style={{background:T.card,borderRadius:14,border:"1px solid "+T.border,padding:20}}>
+        <h4 style={{fontSize:13,fontWeight:600,margin:"0 0 14px",fontFamily:FONT_D}}>Progresso por OKR</h4>
+        {(p.okrs||[]).map(o=>{
+          const op=calcOKRProgress(o);
+          return <div key={o.id} style={{marginBottom:12}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+              <span style={{fontSize:11,color:T.textSecondary,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{o.objective}</span>
+              <span style={{fontSize:11,fontWeight:700,color:op>=70?T.success:T.warning}}>{op}%</span>
+            </div>
+            <ProgressBar value={op}/>
+          </div>;
+        })}
+      </div>
+      <div style={{background:T.card,borderRadius:14,border:"1px solid "+T.border,padding:20}}>
+        <h4 style={{fontSize:13,fontWeight:600,margin:"0 0 14px",fontFamily:FONT_D}}>Progresso por Key Result</h4>
+        <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>
+          {(p.okrs||[]).flatMap(o=>(o.keyResults||[]).map(kr=><CircleGauge key={kr.id} value={calcKRProgress(kr)} size={64} stroke={4} label={kr.title.substring(0,30)+"..."}/>))}
+        </div>
+      </div>
+    </div>
+
+    <div style={{background:T.card,borderRadius:14,border:"1px solid "+T.border,padding:20}}>
+      <h4 style={{fontSize:13,fontWeight:600,margin:"0 0 14px",fontFamily:FONT_D}}>Investimento por Ação (R$ mil)</h4>
+      <MiniBar data={all.map(a=>({label:a.what.substring(0,10),value:(parseInt(a.howMuch?.replace(/\D/g,""))||0)/1000,color:a.status==="Concluído"?T.success:a.status==="Atrasado"?T.danger:T.accent}))} height={110}/>
+    </div>
+  </div>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROJECT DETAIL PAGE
+// ═══════════════════════════════════════════════════════════
+function ProjectDetail({project:p,onBack,onEdit,onToggleAction,onAddOKR,onEditOKR,onDeleteOKR,onAddKR,onEditKR,onDeleteKR,onAddAction,onEditAction,onDeleteAction}){
+  const[tab,setTab]=useState("okrs");
+  const prog=calcProjectProgress(p);
+  const tabs=[
+    {id:"okrs",label:"OKRs & Ações",icon:Icons.Target},
+    {id:"5w2h",label:"Tabela 5W2H",icon:Icons.Layers},
+    {id:"dashboard",label:"Dashboard",icon:Icons.BarChart},
+  ];
+
+  return <div className="fade-in">
+    <button onClick={onBack} style={{background:"none",border:"none",color:T.textMuted,cursor:"pointer",fontFamily:FONT,fontSize:12,fontWeight:500,display:"flex",alignItems:"center",gap:4,marginBottom:12,padding:0}}>← Voltar</button>
+    <div style={{display:"flex",alignItems:"start",justifyContent:"space-between",gap:16}}>
+      <div style={{flex:1}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+          <h1 style={{fontSize:22,fontWeight:700,fontFamily:FONT_D,margin:0}}>{p.nome}</h1>
+          <StatusBadge status={p.status}/>
+        </div>
+        <p style={{color:T.textMuted,fontSize:12,margin:0}}>{p.descricao}</p>
+        <div style={{display:"flex",gap:14,marginTop:8,fontSize:11,color:T.textMuted}}>
+          <span><strong style={{color:T.text}}>Cliente:</strong> {p.cliente}</span>
+          <span><strong style={{color:T.text}}>Consultor:</strong> {p.consultor}</span>
+          <span><strong style={{color:T.text}}>Prazo:</strong> {fmt(p.inicio)} → {fmt(p.prazo)}</span>
+          <span><strong style={{color:T.purple}}>{p.okrs?.length||0} OKRs</strong></span>
+        </div>
+      </div>
+      <Btn icon={Icons.Edit} variant="ghost" onClick={onEdit}>Editar</Btn>
+    </div>
+    <div style={{marginTop:14,display:"flex",alignItems:"center",gap:12,marginBottom:18}}>
+      <div style={{flex:1}}><ProgressBar value={prog} height={7}/></div>
+      <span style={{fontSize:13,fontWeight:700,color:T.text}}>{prog}%</span>
+    </div>
+
+    <div style={{display:"flex",gap:4,marginBottom:18,borderBottom:"1px solid "+T.border}}>
+      {tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{display:"flex",alignItems:"center",gap:6,padding:"9px 14px",border:"none",borderBottom:"2px solid "+(tab===t.id?T.accent:"transparent"),background:"none",color:tab===t.id?T.accent:T.textMuted,cursor:"pointer",fontFamily:FONT,fontSize:12,fontWeight:600,transition:"all 0.15s"}}>
+        <t.icon style={{width:14,height:14}}/>{t.label}
+      </button>)}
+    </div>
+
+    {tab==="okrs"&&<div>
+      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+        <Btn icon={Icons.Plus} size="sm" variant="purple" onClick={onAddOKR}>Novo OKR</Btn>
+      </div>
+      {(p.okrs||[]).map(o=><OKRCard key={o.id} okr={o} onToggleAction={onToggleAction} onEditOKR={onEditOKR} onDeleteOKR={onDeleteOKR} onAddKR={onAddKR} onEditKR={onEditKR} onDeleteKR={onDeleteKR} onAddAction={onAddAction} onEditAction={onEditAction} onDeleteAction={onDeleteAction}/>)}
+      {(!p.okrs||p.okrs.length===0)&&<div style={{padding:40,textAlign:"center",color:T.textMuted}}><Icons.Target style={{width:32,height:32,marginBottom:8,opacity:0.3}}/><p>Nenhum OKR cadastrado</p></div>}
+    </div>}
+
+    {tab==="5w2h"&&<Full5W2HTable project={p} onToggleAction={onToggleAction}/>}
+    {tab==="dashboard"&&<ProjectDashboardTab project={p}/>}
+  </div>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FULL 5W2H TABLE VIEW
+// ═══════════════════════════════════════════════════════════
+function Full5W2HTable({project:p,onToggleAction}){
+  const all=[];
+  (p.okrs||[]).forEach(o=>{(o.keyResults||[]).forEach(kr=>{(kr.acoes||[]).forEach(a=>{all.push({...a,okrObj:o.objective,krTitle:kr.title,okrId:o.id,krId:kr.id})})})});
+  return <div style={{overflowX:"auto"}}>
+    <h3 style={{fontSize:14,fontWeight:600,margin:"0 0 12px",fontFamily:FONT_D}}>Todas as Ações — 5W2H</h3>
+    <table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,fontSize:11}}>
+      <thead><tr>
+        {["✓","OKR","Key Result","What","Why","Who","Where","When","How","How Much","Prior.","Status"].map(h=><th key={h} style={{padding:"8px 10px",textAlign:"left",fontWeight:600,color:T.textMuted,borderBottom:"1px solid "+T.border,whiteSpace:"nowrap",fontSize:9,textTransform:"uppercase",letterSpacing:0.5,position:"sticky",top:0,background:T.card}}>{h}</th>)}
+      </tr></thead>
+      <tbody>{all.map(a=>{
+        const isDone=a.status==="Concluído";
+        return <tr key={a.id} style={{background:isDone?"rgba(34,197,94,0.03)":"transparent"}}
+          onMouseEnter={e=>{e.currentTarget.style.background=T.surface}}
+          onMouseLeave={e=>{e.currentTarget.style.background=isDone?"rgba(34,197,94,0.03)":"transparent"}}>
+          <td style={{padding:"8px 10px",borderBottom:"1px solid "+T.borderLight}}>
+            <div onClick={()=>onToggleAction(a.okrId,a.krId,a.id)} style={{cursor:"pointer",width:16,height:16,borderRadius:4,border:isDone?"none":"2px solid "+T.border,background:isDone?T.success:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              {isDone&&<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+            </div>
+          </td>
+          <td style={{padding:"8px 10px",borderBottom:"1px solid "+T.borderLight,color:T.purple,fontSize:10,maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.okrObj.substring(0,30)}</td>
+          <td style={{padding:"8px 10px",borderBottom:"1px solid "+T.borderLight,color:T.accent,fontSize:10,maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.krTitle.substring(0,30)}</td>
+          <td style={{padding:"8px 10px",borderBottom:"1px solid "+T.borderLight,fontWeight:600,textDecoration:isDone?"line-through":"none",opacity:isDone?0.6:1}}>{a.what}</td>
+          <td style={{padding:"8px 10px",borderBottom:"1px solid "+T.borderLight,color:T.textMuted,maxWidth:140}}>{a.why}</td>
+          <td style={{padding:"8px 10px",borderBottom:"1px solid "+T.borderLight,whiteSpace:"nowrap"}}>{a.who}</td>
+          <td style={{padding:"8px 10px",borderBottom:"1px solid "+T.borderLight,color:T.textMuted}}>{a.where}</td>
+          <td style={{padding:"8px 10px",borderBottom:"1px solid "+T.borderLight,whiteSpace:"nowrap"}}>{fmt(a.when)}</td>
+          <td style={{padding:"8px 10px",borderBottom:"1px solid "+T.borderLight,color:T.textMuted,maxWidth:140}}>{a.how}</td>
+          <td style={{padding:"8px 10px",borderBottom:"1px solid "+T.borderLight,fontWeight:600,whiteSpace:"nowrap"}}>{a.howMuch}</td>
+          <td style={{padding:"8px 10px",borderBottom:"1px solid "+T.borderLight}}><PriorityBadge p={a.prioridade}/></td>
+          <td style={{padding:"8px 10px",borderBottom:"1px solid "+T.borderLight}}><StatusBadge status={a.status}/></td>
+        </tr>;
+      })}</tbody>
+    </table>
+    {all.length===0&&<div style={{padding:30,textAlign:"center",color:T.textMuted,fontSize:12}}>Nenhuma ação cadastrada</div>}
+  </div>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FORM MODALS
+// ═══════════════════════════════════════════════════════════
+function ProjectFormModal({project,onClose,onSave}){
+  const[f,sF]=useState({nome:project?.nome||"",cliente:project?.cliente||"",consultor:project?.consultor||"",inicio:project?.inicio||"2026-01-01",prazo:project?.prazo||"2026-12-31",status:project?.status||"Não iniciado",descricao:project?.descricao||""});
+  const s=k=>v=>sF(x=>({...x,[k]:v}));
+  return <Modal title={project?"Editar Projeto":"Novo Projeto"} onClose={onClose} width={520}>
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <Input label="Nome do Projeto" value={f.nome} onChange={s("nome")} placeholder="Ex: Reestruturação Organizacional"/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        <Input label="Cliente" value={f.cliente} onChange={s("cliente")} placeholder="Empresa"/>
+        <Input label="Consultor" value={f.consultor} onChange={s("consultor")} placeholder="Responsável"/>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+        <Input label="Início" type="date" value={f.inicio} onChange={s("inicio")}/>
+        <Input label="Prazo" type="date" value={f.prazo} onChange={s("prazo")}/>
+        <Input label="Status" value={f.status} onChange={s("status")} options={Object.keys(STATUS)}/>
+      </div>
+      <Input label="Descrição" value={f.descricao} onChange={s("descricao")} rows={2} placeholder="Escopo do projeto..."/>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:6}}>
+        <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
+        <Btn onClick={()=>{if(f.nome&&f.cliente){onSave(f);onClose()}}}>{project?"Salvar":"Criar Projeto"}</Btn>
+      </div>
+    </div>
+  </Modal>;
+}
+
+function OKRFormModal({okr,onClose,onSave}){
+  const[f,sF]=useState({objective:okr?.objective||"",owner:okr?.owner||"",quarter:okr?.quarter||"Q1 2026"});
+  const s=k=>v=>sF(x=>({...x,[k]:v}));
+  return <Modal title={okr?"Editar OKR":"Novo OKR (Objetivo)"} onClose={onClose} width={480}>
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <Input label="Objetivo" value={f.objective} onChange={s("objective")} placeholder="Ex: Reduzir custos operacionais em 20%"/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        <Input label="Responsável" value={f.owner} onChange={s("owner")} placeholder="Nome"/>
+        <Input label="Período" value={f.quarter} onChange={s("quarter")} placeholder="Q1 2026"/>
+      </div>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:6}}>
+        <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
+        <Btn variant="purple" onClick={()=>{if(f.objective){onSave(f);onClose()}}}>{okr?"Salvar":"Criar OKR"}</Btn>
+      </div>
+    </div>
+  </Modal>;
+}
+
+function KRFormModal({kr,onClose,onSave}){
+  const[f,sF]=useState({title:kr?.title||"",meta:kr?.meta||100,unidade:kr?.unidade||"%"});
+  const s=k=>v=>sF(x=>({...x,[k]:v}));
+  return <Modal title={kr?"Editar Key Result":"Novo Key Result"} onClose={onClose} width={460}>
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <Input label="Key Result" value={f.title} onChange={s("title")} placeholder="Ex: Reduzir tempo de aprovação de 5 para 2 dias"/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        <Input label="Meta" type="number" value={f.meta} onChange={v=>s("meta")(Number(v))}/>
+        <Input label="Unidade" value={f.unidade} onChange={s("unidade")} placeholder="%, pts, dias"/>
+      </div>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:6}}>
+        <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
+        <Btn onClick={()=>{if(f.title){onSave(f);onClose()}}}>{kr?"Salvar":"Criar KR"}</Btn>
+      </div>
+    </div>
+  </Modal>;
+}
+
+function ActionFormModal({action,onClose,onSave}){
+  const[f,sF]=useState({what:action?.what||"",why:action?.why||"",who:action?.who||"",where:action?.where||"",when:action?.when||"2026-04-01",how:action?.how||"",howMuch:action?.howMuch||"",status:action?.status||"Não iniciado",prioridade:action?.prioridade||"Média"});
+  const s=k=>v=>sF(x=>({...x,[k]:v}));
+  return <Modal title={action?"Editar Ação":"Nova Ação — 5W2H"} onClose={onClose} width={580}>
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <Input label="What — O que será feito?" value={f.what} onChange={s("what")} placeholder="Descreva a ação"/>
+      <Input label="Why — Por que será feito?" value={f.why} onChange={s("why")} placeholder="Justificativa"/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        <Input label="Who — Quem?" value={f.who} onChange={s("who")} placeholder="Responsável"/>
+        <Input label="Where — Onde?" value={f.where} onChange={s("where")} placeholder="Local"/>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+        <Input label="When — Quando?" type="date" value={f.when} onChange={s("when")}/>
+        <Input label="Prioridade" value={f.prioridade} onChange={s("prioridade")} options={Object.keys(PRIORITY)}/>
+        <Input label="Status" value={f.status} onChange={s("status")} options={Object.keys(STATUS)}/>
+      </div>
+      <Input label="How — Como?" value={f.how} onChange={s("how")} rows={2} placeholder="Método"/>
+      <Input label="How Much — Custo?" value={f.howMuch} onChange={s("howMuch")} placeholder="R$ 0,00"/>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:6}}>
+        <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
+        <Btn onClick={()=>{if(f.what){onSave(f);onClose()}}}>{action?"Salvar":"Adicionar Ação"}</Btn>
+      </div>
+    </div>
+  </Modal>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOGIN PAGE
+// ═══════════════════════════════════════════════════════════
+function LoginPage({onLogin}){
+  const[user,setUser]=useState("");
+  const[pass,setPass]=useState("");
+  const[error,setError]=useState("");
+  const[showPass,setShowPass]=useState(false);
+  const[loading,setLoading]=useState(false);
+  const[shaking,setShaking]=useState(false);
+
+  const handleLogin=()=>{
+    if(!user.trim()||!pass.trim()){setError("Preencha todos os campos");triggerShake();return}
+    setLoading(true);setError("");
+    setTimeout(()=>{
+      if(user.trim()==="Eron Gomes"&&pass==="123"){
+        onLogin({name:"Eron Gomes",initials:"EG",role:"Consultor Sênior"});
+      }else{
+        setError("Usuário ou senha incorretos");setLoading(false);triggerShake();
+      }
+    },800);
+  };
+
+  const triggerShake=()=>{setShaking(true);setTimeout(()=>setShaking(false),500)};
+  const handleKeyDown=e=>{if(e.key==="Enter")handleLogin()};
+
+  return <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",fontFamily:FONT}}>
+    {/* Background orbs */}
+    <div style={{position:"absolute",width:400,height:400,borderRadius:"50%",background:"radial-gradient(circle,rgba(59,130,246,0.08) 0%,transparent 70%)",top:"-10%",left:"-5%",animation:"floatOrb 12s ease-in-out infinite"}}/>
+    <div style={{position:"absolute",width:350,height:350,borderRadius:"50%",background:"radial-gradient(circle,rgba(139,92,246,0.06) 0%,transparent 70%)",bottom:"-10%",right:"-5%",animation:"floatOrb 15s ease-in-out infinite 3s"}}/>
+    <div style={{position:"absolute",width:200,height:200,borderRadius:"50%",background:"radial-gradient(circle,rgba(34,197,94,0.05) 0%,transparent 70%)",top:"50%",left:"60%",animation:"floatOrb 10s ease-in-out infinite 1.5s"}}/>
+
+    {/* Grid pattern overlay */}
+    <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle at 1px 1px, rgba(255,255,255,0.02) 1px, transparent 0)",backgroundSize:"40px 40px"}}/>
+
+    {/* Login Card */}
+    <div className={`login-reveal ${shaking?"shake":""}`} style={{position:"relative",width:420,background:"linear-gradient(145deg,"+T.card+","+T.surface+")",borderRadius:24,border:"1px solid "+T.border,padding:"40px 36px",boxShadow:"0 40px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03) inset"}}>
+      
+      {/* Logo */}
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:32}}>
+        <div style={{width:56,height:56,borderRadius:16,background:T.gradient,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16,boxShadow:"0 8px 32px rgba(59,130,246,0.3)"}}>
+          <Icons.Target style={{width:28,height:28,color:"#fff"}}/>
+        </div>
+        <h1 style={{fontSize:22,fontWeight:700,fontFamily:FONT_D,color:T.text,letterSpacing:-0.5,marginBottom:4}}>ConsultPro</h1>
+        <p style={{fontSize:12,color:T.textMuted,fontWeight:500}}>Gestão de Projetos & OKRs</p>
+      </div>
+
+      {/* Form */}
+      <div style={{display:"flex",flexDirection:"column",gap:16}}>
+        <div style={{display:"flex",flexDirection:"column",gap:5}}>
+          <label style={{fontSize:11,fontWeight:600,color:T.textMuted,letterSpacing:0.5,textTransform:"uppercase"}}>Usuário</label>
+          <div style={{position:"relative"}}>
+            <div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:T.textDim}}>
+              <Icons.Users style={{width:16,height:16}}/>
+            </div>
+            <input value={user} onChange={e=>setUser(e.target.value)} onKeyDown={handleKeyDown} placeholder="Nome de usuário"
+              style={{width:"100%",padding:"11px 12px 11px 38px",borderRadius:10,border:"1px solid "+(error?T.danger:T.border),background:T.bg,color:T.text,fontSize:14,fontFamily:FONT,outline:"none",transition:"border-color 0.2s"}}
+              onFocus={e=>{e.target.style.borderColor=T.accent}} onBlur={e=>{e.target.style.borderColor=error?T.danger:T.border}}/>
+          </div>
+        </div>
+
+        <div style={{display:"flex",flexDirection:"column",gap:5}}>
+          <label style={{fontSize:11,fontWeight:600,color:T.textMuted,letterSpacing:0.5,textTransform:"uppercase"}}>Senha</label>
+          <div style={{position:"relative"}}>
+            <div style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:T.textDim}}>
+              <Icons.Zap style={{width:16,height:16}}/>
+            </div>
+            <input type={showPass?"text":"password"} value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={handleKeyDown} placeholder="Sua senha"
+              style={{width:"100%",padding:"11px 42px 11px 38px",borderRadius:10,border:"1px solid "+(error?T.danger:T.border),background:T.bg,color:T.text,fontSize:14,fontFamily:FONT,outline:"none",transition:"border-color 0.2s"}}
+              onFocus={e=>{e.target.style.borderColor=T.accent}} onBlur={e=>{e.target.style.borderColor=error?T.danger:T.border}}/>
+            <button onClick={()=>setShowPass(!showPass)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:T.textMuted,padding:4}}>
+              <Icons.Eye style={{width:16,height:16}}/>
+            </button>
+          </div>
+        </div>
+
+        {/* Error message */}
+        {error&&<div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",borderRadius:8,background:T.dangerSoft,border:"1px solid rgba(239,68,68,0.2)"}}>
+          <Icons.AlertTriangle style={{width:14,height:14,color:T.danger,flexShrink:0}}/>
+          <span style={{fontSize:12,color:T.danger,fontWeight:500}}>{error}</span>
+        </div>}
+
+        {/* Login button */}
+        <button onClick={handleLogin} disabled={loading}
+          style={{width:"100%",padding:"12px 0",borderRadius:10,border:"none",background:loading?T.border:T.gradient,color:"#fff",fontSize:14,fontWeight:700,fontFamily:FONT,cursor:loading?"wait":"pointer",transition:"all 0.2s",marginTop:4,position:"relative",overflow:"hidden"}}
+          onMouseEnter={e=>{if(!loading)e.currentTarget.style.opacity="0.9"}} onMouseLeave={e=>{e.currentTarget.style.opacity="1"}}>
+          {loading?<span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" style={{animation:"pulse 1s infinite"}}><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="32" strokeDashoffset="12"/></svg>
+            Entrando...
+          </span>:"Entrar"}
+        </button>
+      </div>
+
+      {/* Footer */}
+      <div style={{textAlign:"center",marginTop:24,paddingTop:20,borderTop:"1px solid "+T.border}}>
+        <p style={{fontSize:11,color:T.textDim}}>Sistema de Gestão de Consultoria Empresarial</p>
+      </div>
+    </div>
+  </div>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════════════════════════════
+function App(){
+  const[auth,setAuth]=useState(null);
+  const[projects,setProjects]=useState(INIT_PROJECTS);
+  const[page,setPage]=useState("dashboard");
+  const[selProj,setSelProj]=useState(null);
+  const[modal,setModal]=useState(null);
+
+  const handleLogout=()=>{setAuth(null);setPage("dashboard");setSelProj(null);setModal(null)};
+
+  // Show login if not authenticated
+  if(!auth)return <LoginPage onLogin={setAuth}/>;
+
+  // Deep updater for nested OKR structure
+  const updateProjectDeep=(pId,updater)=>setProjects(ps=>ps.map(p=>p.id===pId?updater(p):p));
+
+  // Project CRUD
+  const addProject=d=>setProjects(ps=>[...ps,{...d,id:uid(),okrs:[]}]);
+  const updateProject=(id,d)=>updateProjectDeep(id,p=>({...p,...d}));
+  const deleteProject=id=>{setProjects(ps=>ps.filter(p=>p.id!==id));if(selProj?.id===id)setSelProj(null);setPage("projetos")};
+
+  // OKR CRUD
+  const addOKR=(pId,d)=>updateProjectDeep(pId,p=>({...p,okrs:[...p.okrs||[],{...d,id:uid(),keyResults:[]}]}));
+  const updateOKR=(pId,oId,d)=>updateProjectDeep(pId,p=>({...p,okrs:(p.okrs||[]).map(o=>o.id===oId?{...o,...d}:o)}));
+  const deleteOKR=(pId,oId)=>updateProjectDeep(pId,p=>({...p,okrs:(p.okrs||[]).filter(o=>o.id!==oId)}));
+
+  // KR CRUD
+  const addKR=(pId,oId,d)=>updateProjectDeep(pId,p=>({...p,okrs:(p.okrs||[]).map(o=>o.id===oId?{...o,keyResults:[...o.keyResults||[],{...d,id:uid(),acoes:[]}]}:o)}));
+  const updateKR=(pId,oId,kId,d)=>updateProjectDeep(pId,p=>({...p,okrs:(p.okrs||[]).map(o=>o.id===oId?{...o,keyResults:(o.keyResults||[]).map(k=>k.id===kId?{...k,...d}:k)}:o)}));
+  const deleteKR=(pId,oId,kId)=>updateProjectDeep(pId,p=>({...p,okrs:(p.okrs||[]).map(o=>o.id===oId?{...o,keyResults:(o.keyResults||[]).filter(k=>k.id!==kId)}:o)}));
+
+  // Action CRUD
+  const addAction=(pId,oId,kId,d)=>updateProjectDeep(pId,p=>({...p,okrs:(p.okrs||[]).map(o=>o.id===oId?{...o,keyResults:(o.keyResults||[]).map(k=>k.id===kId?{...k,acoes:[...k.acoes||[],{...d,id:uid()}]}:k)}:o)}));
+  const updateAction=(pId,oId,kId,aId,d)=>updateProjectDeep(pId,p=>({...p,okrs:(p.okrs||[]).map(o=>o.id===oId?{...o,keyResults:(o.keyResults||[]).map(k=>k.id===kId?{...k,acoes:(k.acoes||[]).map(a=>a.id===aId?{...a,...d}:a)}:k)}:o)}));
+  const deleteAction=(pId,oId,kId,aId)=>updateProjectDeep(pId,p=>({...p,okrs:(p.okrs||[]).map(o=>o.id===oId?{...o,keyResults:(o.keyResults||[]).map(k=>k.id===kId?{...k,acoes:(k.acoes||[]).filter(a=>a.id!==aId)}:k)}:o)}));
+
+  // Toggle action status (click checkbox = toggle Concluído)
+  const toggleAction=(oId,kId,aId,newStatus)=>{
+    if(!selProj)return;
+    updateProjectDeep(selProj.id,p=>({...p,okrs:(p.okrs||[]).map(o=>o.id===oId?{...o,keyResults:(o.keyResults||[]).map(k=>k.id===kId?{...k,acoes:(k.acoes||[]).map(a=>{
+      if(a.id!==aId)return a;
+      if(newStatus)return{...a,status:newStatus};
+      return{...a,status:a.status==="Concluído"?"Não iniciado":"Concluído"};
+    })}:k)}:o)}));
+  };
+
+  const openProject=p=>{setSelProj(p);setPage("detalhe")};
+  const cur=selProj?projects.find(p=>p.id===selProj.id)||selProj:null;
+
+  return <div style={{display:"flex",minHeight:"100vh",fontFamily:FONT,background:T.bg,color:T.text}}>
+    {/* Sidebar */}
+    <aside style={{width:210,background:T.surface,borderRight:"1px solid "+T.border,display:"flex",flexDirection:"column",flexShrink:0}}>
+      <div style={{padding:"18px 14px",borderBottom:"1px solid "+T.border}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:32,height:32,borderRadius:9,background:T.gradient,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <Icons.Target style={{width:16,height:16,color:"#fff"}}/>
+          </div>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,fontFamily:FONT_D,letterSpacing:-0.3}}>ConsultPro</div>
+            <div style={{fontSize:9,color:T.textMuted,fontWeight:500}}>OKRs & Consultoria</div>
+          </div>
+        </div>
+      </div>
+      <nav style={{padding:"10px 6px",flex:1}}>
+        {[{id:"dashboard",label:"Dashboard",icon:Icons.Home},{id:"projetos",label:"Projetos",icon:Icons.Folder}].map(item=>{
+          const active=page===item.id||(page==="detalhe"&&item.id==="projetos");
+          return <button key={item.id} onClick={()=>setPage(item.id)} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"9px 11px",border:"none",borderRadius:7,cursor:"pointer",fontFamily:FONT,fontSize:12,fontWeight:active?600:500,background:active?T.accentSoft:"transparent",color:active?T.accent:T.textMuted,transition:"all 0.15s",marginBottom:2,textAlign:"left"}}>
+            <item.icon style={{width:16,height:16,flexShrink:0}}/>{item.label}
+          </button>;
+        })}
+      </nav>
+      <div style={{padding:14,borderTop:"1px solid "+T.border}}>
+        <div style={{display:"flex",alignItems:"center",gap:9}}>
+          <div style={{width:30,height:30,borderRadius:7,background:"linear-gradient(135deg,#3b82f6,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff"}}>{auth.initials}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:11,fontWeight:600}}>{auth.name}</div>
+            <div style={{fontSize:9,color:T.textMuted}}>{auth.role}</div>
+          </div>
+          <button onClick={handleLogout} title="Sair" style={{background:"none",border:"none",cursor:"pointer",color:T.textDim,padding:4,borderRadius:6,transition:"all 0.15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.color=T.danger;e.currentTarget.style.background=T.dangerSoft}}
+            onMouseLeave={e=>{e.currentTarget.style.color=T.textDim;e.currentTarget.style.background="none"}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    {/* Main Content */}
+    <main style={{flex:1,overflow:"auto",padding:26,maxHeight:"100vh"}}>
+      {page==="dashboard"&&<DashboardPage projects={projects} openProject={openProject}/>}
+      {page==="projetos"&&<ProjectsPage projects={projects} openProject={openProject} onAdd={()=>setModal("newProject")} onDelete={deleteProject}/>}
+      {page==="detalhe"&&cur&&<ProjectDetail project={cur}
+        onBack={()=>setPage("projetos")}
+        onEdit={()=>setModal("editProject")}
+        onToggleAction={toggleAction}
+        onAddOKR={()=>setModal("newOKR")}
+        onEditOKR={o=>setModal({type:"editOKR",data:o})}
+        onDeleteOKR={oId=>deleteOKR(cur.id,oId)}
+        onAddKR={oId=>setModal({type:"newKR",okrId:oId})}
+        onEditKR={(oId,kr)=>setModal({type:"editKR",okrId:oId,data:kr})}
+        onDeleteKR={(oId,kId)=>deleteKR(cur.id,oId,kId)}
+        onAddAction={(oId,kId)=>setModal({type:"newAction",okrId:oId,krId:kId})}
+        onEditAction={(oId,kId,a)=>setModal({type:"editAction",okrId:oId,krId:kId,data:a})}
+        onDeleteAction={(oId,kId,aId)=>deleteAction(cur.id,oId,kId,aId)}
+      />}
+
+      {/* Modals */}
+      {modal==="newProject"&&<ProjectFormModal onClose={()=>setModal(null)} onSave={addProject}/>}
+      {modal==="editProject"&&cur&&<ProjectFormModal project={cur} onClose={()=>setModal(null)} onSave={d=>{updateProject(cur.id,d);setSelProj({...cur,...d})}}/>}
+      {modal==="newOKR"&&cur&&<OKRFormModal onClose={()=>setModal(null)} onSave={d=>addOKR(cur.id,d)}/>}
+      {modal?.type==="editOKR"&&cur&&<OKRFormModal okr={modal.data} onClose={()=>setModal(null)} onSave={d=>updateOKR(cur.id,modal.data.id,d)}/>}
+      {modal?.type==="newKR"&&cur&&<KRFormModal onClose={()=>setModal(null)} onSave={d=>addKR(cur.id,modal.okrId,d)}/>}
+      {modal?.type==="editKR"&&cur&&<KRFormModal kr={modal.data} onClose={()=>setModal(null)} onSave={d=>updateKR(cur.id,modal.okrId,modal.data.id,d)}/>}
+      {modal?.type==="newAction"&&cur&&<ActionFormModal onClose={()=>setModal(null)} onSave={d=>addAction(cur.id,modal.okrId,modal.krId,d)}/>}
+      {modal?.type==="editAction"&&cur&&<ActionFormModal action={modal.data} onClose={()=>setModal(null)} onSave={d=>updateAction(cur.id,modal.okrId,modal.krId,modal.data.id,d)}/>}
+    </main>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body>
+</html>
